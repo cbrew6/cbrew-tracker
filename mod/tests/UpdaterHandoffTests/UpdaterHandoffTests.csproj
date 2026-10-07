@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Tests for Hooks/UpdaterHandoff.cs - the part of the updater hand-off that decides whether
+    the game's call to start its updater is touched, and how. Compiled in from the mod's own
+    source rather than referenced, which is why that file is kept free of Unity and Harmony.
+
+        dotnet run -c Release (from this folder)
+
+    net472 on purpose: the closest runtime to the game's Mono that runs outside it. The quoting
+    tests call CommandLineToArgvW, so this runs on Windows only.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../../CbrewTracker/Hooks/UpdaterHandoff.cs" Link="UpdaterHandoff.cs" />
+  </ItemGroup>
+
+</Project>

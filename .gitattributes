@@ -1,0 +1,11 @@
+# Shell scripts must be LF or the shebang reads as /bin/bash\r and fails with
+# "bad interpreter" - a correct script that looks broken.
+*.sh        eol=lf
+*.command   eol=lf
+
+# Windows launchers are CRLF; cmd.exe is happier and nothing else reads them.
+*.cmd       eol=crlf
+*.ps1       eol=crlf
+
+*.dll       binary
+*.pem       text eol=lf

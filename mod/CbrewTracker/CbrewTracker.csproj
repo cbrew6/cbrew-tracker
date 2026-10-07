@@ -1,0 +1,69 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The in-game assembly. Unity loads it by assembly name from the game's own manifests, so
+    AssemblyName must match the name scripts/modinstall.py registers.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <AssemblyName>CbrewTracker</AssemblyName>
+    <RootNamespace>CbrewTracker</RootNamespace>
+    <LangVersion>9.0</LangVersion>
+    <Version>1.0.0</Version>
+    <!-- The plain version, without the SDK's default "+<commit>" suffix. -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <AssemblyTitle>cbrew Tracker</AssemblyTitle>
+    <!-- No debug symbols. A portable PDB would embed the absolute path of the machine that
+         built the DLL, and the DLL in mod/dist is shipped to everyone. -->
+    <DebugType>none</DebugType>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>../libs/harmony/0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!--
+    Game assemblies. Not redistributable, so ../libs/game is gitignored. Copy them from your
+    own install with scripts/copy-game-libs.py.
+  -->
+  <ItemGroup>
+    <Reference Include="TPCI.RainierClient">
+      <HintPath>../libs/game/TPCI.RainierClient.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="SharedLogicUtils">
+      <HintPath>../libs/game/SharedLogicUtils.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="RainierClientSDK">
+      <HintPath>../libs/game/RainierClientSDK.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="MatchLogic">
+      <HintPath>../libs/game/MatchLogic.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>../libs/game/UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>../libs/game/UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="CopyHarmony" AfterTargets="Build">
+    <Copy SourceFiles="$(MSBuildProjectDirectory)/../libs/harmony/0Harmony.dll"
+          DestinationFolder="$(OutDir)" />
+  </Target>
+
+</Project>

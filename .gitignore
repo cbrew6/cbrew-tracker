@@ -1,0 +1,18 @@
+# Game assemblies - not redistributable. Copy them from your own install with
+# scripts/copy-game-libs.py.
+mod/libs/game/
+
+# Build output. mod/dist/ IS committed so installing needs no .NET toolchain.
+mod/build/
+**/obj/
+**/bin/
+__pycache__/
+*.pyc
+
+# No secret belongs in this repo.
+*.pem
+
+# The installer's copy of the game's own Unity manifests, taken before it edits them.
+# Machine-specific by definition - it holds this PC's manifests and, in source.txt, the
+# path they came from. It must never be committed and must never end up in a release zip.
+backup/
