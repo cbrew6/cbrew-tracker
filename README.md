@@ -420,8 +420,11 @@ and expects
  "hidden_true": 0}
 ```
 
-where `columns` holds the non-null count of each field for that key. It compares those with
-the local database column by column, which catches fields silently dropped in transit.
+where `columns` holds the non-null count of each field for that key (an empty string counts
+as null) and `hidden_true` how many of its matches are hidden. It compares those with the
+local database column by column, which catches fields silently dropped in transit. A server
+may hold *more* hidden matches than the client, if it lets matches be hidden on the site;
+only fewer counts as a mismatch.
 Answer `{"ok": true, "known": false}` for a key you have never seen.
 
 ---

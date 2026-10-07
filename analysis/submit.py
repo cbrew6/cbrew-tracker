@@ -386,7 +386,9 @@ def verify(db_path, endpoint=None):
     db = sqlite3.connect(db_path)
     local_cols = [r[1] for r in db.execute("PRAGMA table_info(matches)")]
     local_rows = db.execute("SELECT COUNT(*) FROM matches").fetchone()[0]
-    local = {c: db.execute(f"SELECT COUNT({c}) FROM matches").fetchone()[0] for c in local_cols}
+    # NULLIF: an empty string is stored as nothing on the server, so it counts as nothing here.
+    local = {c: db.execute(f"SELECT COUNT(NULLIF({c}, '')) FROM matches").fetchone()[0]
+             for c in local_cols}
     db_hidden = db.execute(
         "SELECT COUNT(*) FROM matches WHERE COALESCE(hidden, 0) = 1").fetchone()[0]
     db.close()
@@ -402,6 +404,10 @@ def verify(db_path, endpoint=None):
           f"{(remote.get('span') or {}).get('profiles')}")
     print()
 
+    # A server may let matches be hidden on its own site, which this install never hears
+    # about. So the server holding MORE hidden matches is expected; fewer is a problem.
+    hidden_cols = ("hidden", "hidden_at", "hidden_reason")
+
     problems = 0
     for col in local_cols:
         if col not in sent:
@@ -410,14 +416,17 @@ def verify(db_path, endpoint=None):
         # `hidden` is nullable here and NOT NULL DEFAULT 0 on the server, so its non-null
         # counts are not comparable - the server correctly has a value in every row.
         # Compare how many are actually hidden, which is the fact that matters.
-        if col == "hidden":
-            mine = db_hidden
-            theirs = remote.get("hidden_true")
+        if col in hidden_cols:
+            mine = db_hidden if col == "hidden" else local[col]
+            theirs = remote.get("hidden_true") if col == "hidden" else server.get(col)
             if theirs is None:
-                print(f"  {col:<24} {mine:>5} local   (server too old to report)")
-            elif mine != theirs:
+                print(f"  {col:<24} {mine:>5} local   (server does not report it)")
+            elif theirs < mine:
                 print(f"  {col:<24} {mine:>5} local  {theirs:>5} server  *** DIFFERS ***")
                 problems += 1
+            elif theirs > mine:
+                print(f"  {col:<24} {mine:>5} local  {theirs:>5} server  "
+                      f"(the rest were hidden on the server)")
             continue
         if col not in server:
             if local[col]:
