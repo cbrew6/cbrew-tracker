@@ -78,13 +78,12 @@ else
     "$HERE/install-macos.sh"
 fi
 
-# --- the watcher --------------------------------------------------------------------------
-"$HERE/install-watcher-macos.sh"
-
 # --- send anything already recorded --------------------------------------------------------
 #
 # A first submission proves the whole chain works before the player ever launches the game,
-# and on a machine that already has history it backfills the lot.
+# and on a machine that already has history it backfills the lot. It runs before the watcher
+# starts, because the watcher's own catch-up would otherwise send the same history at the
+# same moment.
 #
 # A failure here is cosmetic and must never fail the install. The tracker is in place by
 # this point and the watcher retries on its own - failing to send is never failing to
@@ -96,6 +95,9 @@ else
     detail "nothing sent now: $OUT"
     step "Your matches will send after the next game"
 fi
+
+# --- the watcher --------------------------------------------------------------------------
+"$HERE/install-watcher-macos.sh"
 
 echo ""
 echo "Done. Launch Pokemon TCG Live and play."

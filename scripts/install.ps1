@@ -86,12 +86,11 @@ try {
     & (Join-Path $Root "scripts\install-watcher-windows.ps1") -Stop -Quiet
     & (Join-Path $Root "scripts\install-windows.ps1") -GamePath $GamePath
 
-    # --- the watcher ----------------------------------------------------------------
-    & (Join-Path $Root "scripts\install-watcher-windows.ps1")
-
     # --- send anything already recorded --------------------------------------------
     # A first submission proves the whole chain works before the player ever launches the
-    # game, and on a machine that already has history it backfills the lot.
+    # game, and on a machine that already has history it backfills the lot. It runs
+    # before the watcher starts, because the watcher's own catch-up would otherwise send
+    # the same history at the same moment.
     #
     # A failure here is cosmetic and must never fail the install. The tracker is in place
     # by this point and the watcher retries on its own - failing to send is never failing
@@ -108,6 +107,9 @@ try {
         Write-Detail "nothing sent now: $($_.Exception.Message)"
         Write-Step "Your matches will send after the next game"
     }
+
+    # --- the watcher ----------------------------------------------------------------
+    & (Join-Path $Root "scripts\install-watcher-windows.ps1")
 
     Write-Host ""
     Write-Host "Done. Launch Pokemon TCG Live and play."
