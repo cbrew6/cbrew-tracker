@@ -62,6 +62,11 @@ function Remove-WatcherRegistrations {
     any registered by another build of this tracker under its own name. Two registrations
     would start two watchers at every login, and the other one would keep putting its own
     build back into the game.
+
+    Returns the names of other builds' tasks that are still registered afterwards. A task
+    registered from an elevated shell can need an elevated shell to remove, and one left
+    behind starts the other build's watcher again at the next login - so the caller has to
+    say so rather than carry on as if it were gone.
     #>
     $tasks = @(Get-ScheduledTask -ErrorAction SilentlyContinue | Where-Object {
         $_.TaskName -eq $TaskName -or $_.TaskName -like "PtcglTracker*Watcher"
@@ -70,11 +75,24 @@ function Remove-WatcherRegistrations {
         try {
             Unregister-ScheduledTask -TaskName $t.TaskName -TaskPath $t.TaskPath -Confirm:$false -ErrorAction Stop
             if ($t.TaskName -ne $TaskName) { Write-Detail "removed another build's task ($($t.TaskName))" }
-        } catch { }
+        } catch {
+            Write-Detail "could not remove task $($t.TaskName): $($_.Exception.Message)"
+        }
     }
     foreach ($lnk in @(Get-ChildItem -Path $Startup -Filter "*Tracker*Watcher.lnk" -ErrorAction SilentlyContinue)) {
         Remove-Item $lnk.FullName -Force -ErrorAction SilentlyContinue
     }
+    return @(Get-ScheduledTask -ErrorAction SilentlyContinue |
+        Where-Object { $_.TaskName -like "PtcglTracker*Watcher" } |
+        ForEach-Object { $_.TaskName })
+}
+
+function Write-LeftoverWarning {
+    param([string[]]$Names)
+    if ($Names.Count -eq 0) { return }
+    Write-Step "WARNING: an older tracker's startup task could not be removed ($($Names -join ', '))."
+    Write-Step "It would start the old tracker again at your next login. Right-click"
+    Write-Step "Install-Windows.cmd and choose 'Run as administrator' once to remove it."
 }
 
 # Dot-sourced before -Stop is handled: Stop-RunningWatcher narrates through Write-Detail,
@@ -82,9 +100,12 @@ function Remove-WatcherRegistrations {
 . (Join-Path $PSScriptRoot "windows-common.ps1")
 
 if ($Stop) {
-    Remove-WatcherRegistrations
+    $leftover = @(Remove-WatcherRegistrations)
     Stop-RunningWatcher | Out-Null
-    if (-not $Quiet) { Write-Host "Watcher stopped and removed." }
+    if (-not $Quiet) {
+        Write-Host "Watcher stopped and removed."
+        Write-LeftoverWarning $leftover
+    }
     exit 0
 }
 
@@ -159,7 +180,7 @@ Start-Process -FilePath "$PythonW" -ArgumentList '$Argument' -WindowStyle Hidden
 # because UAC hands an unelevated session a filtered token and the task service honours
 # that. Rather than demand "run as Administrator", fall back to the Startup folder,
 # which needs no elevation and gets the same job done minus the auto-restart.
-Remove-WatcherRegistrations
+$leftover = @(Remove-WatcherRegistrations)
 Stop-RunningWatcher | Out-Null
 $viaTask = $false
 try {
@@ -216,3 +237,4 @@ if ($viaTask) {
 Write-Detail "running now: $(if ($running) { 'yes, pid ' + ($running.ProcessId -join ', ') } else { 'not detected - check the log' })"
 Write-Detail "log: $LogFile"
 Write-Detail "stop with: .\scripts\install-watcher-windows.ps1 -Stop"
+Write-LeftoverWarning $leftover
